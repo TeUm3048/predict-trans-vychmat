@@ -37,7 +37,7 @@ echo "Configuring Python-${PYTHON_VERSION}..."
 ./configure --enable-optimizations
 
 echo "Building Python-${PYTHON_VERSION}..."
-make -j 2
+make -j $(nproc)
 sudo make altinstall
 
 echo "Python version:"
