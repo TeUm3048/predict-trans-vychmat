@@ -22,4 +22,3 @@ gcc --version
 
 echo "You can switch between versions using the command:"
 echo "sudo update-alternatives --config gcc"
-echo "sudo update-alternatives --config g++"
