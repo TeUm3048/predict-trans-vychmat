@@ -9,6 +9,7 @@ from python.utils import (
 )
 from python.view_data import plot_comparison
 
+
 def preprocess_point_cloud(pcd, voxel_size):
     pcd_down = pcd.voxel_down_sample(voxel_size)
     pcd_down.estimate_normals(
@@ -24,30 +25,63 @@ def preprocess_point_cloud(pcd, voxel_size):
     )
     return pcd_down, pcd_fpfh
 
-def execute_global_registration(source_down, target_down, source_fpfh, target_fpfh, voxel_size):
+
+def execute_global_registration(
+    source_down, target_down, source_fpfh, target_fpfh, voxel_size
+):
     distance_threshold = voxel_size * 1.5
-    result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-        source_down,
-        target_down,
-        source_fpfh,
-        target_fpfh,
-        True,
-        distance_threshold,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
-        4,
-        [
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                distance_threshold
-            ),
-        ],
-        o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500),
+    result = (
+        o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
+            source_down,
+            target_down,
+            source_fpfh,
+            target_fpfh,
+            True,
+            distance_threshold,
+            o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+            4,
+            [
+                o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(
+                    0.9
+                ),
+                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                    distance_threshold
+                ),
+            ],
+            o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500),
+        )
     )
     return result
 
+
+def show_voxel_grid(pcd, voxel_size):
+    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size)
+
+    # Визуализация воксельной сетки
+    o3d.visualization.draw_geometries([voxel_grid])
+
+
+def show_voxel_centers(pcd, voxel_size):
+    # Создание воксельной сетки из облака точек
+    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size)
+
+    # Извлечение центральных точек вокселей
+    voxel_centers = [
+        voxel.grid_index * voxel_size for voxel in voxel_grid.get_voxels()
+    ]
+    voxel_centers = np.array(voxel_centers, dtype=np.float64)
+
+    # Создание облака точек из центральных точек вокселей
+    voxel_pcd = o3d.geometry.PointCloud()
+    voxel_pcd.points = o3d.utility.Vector3dVector(voxel_centers)
+
+    # Визуализация облака точек, представляющего центры вокселей
+    o3d.visualization.draw_geometries([voxel_pcd])
+
+
 if __name__ == '__main__':
     NOISE_SCALE = 0.05
-    VOXEL_SIZE = 0.05  # Размер вокселя для понижения разрешения
+    VOXEL_SIZE = NOISE_SCALE  # Размер вокселя для понижения разрешения
 
     # Загрузка исходного облака точек
     X = np.loadtxt(open("../assets/cat.csv", "rb"), delimiter=",")
@@ -60,6 +94,8 @@ if __name__ == '__main__':
 
     Y = transform(X, _L, _t)
     Y = add_noise(Y, sigma=NOISE_SCALE)
+    X = add_noise(X, sigma=NOISE_SCALE)
+
     Y = permute(Y, _P)
 
     # Преобразование numpy массивов в облака точек Open3D
@@ -76,9 +112,19 @@ if __name__ == '__main__':
     result_ransac = execute_global_registration(
         source_down, target_down, source_fpfh, target_fpfh, VOXEL_SIZE
     )
+    source_pcd.estimate_normals(
+        search_param=o3d.geometry.KDTreeSearchParamHybrid(
+            radius=VOXEL_SIZE * 2, max_nn=30
+        )
+    )
+    target_pcd.estimate_normals(
+        search_param=o3d.geometry.KDTreeSearchParamHybrid(
+            radius=VOXEL_SIZE * 2, max_nn=30
+        )
+    )
 
     # Уточнение с помощью ICP
-    threshold = 10  # Максимальное расстояние для поиска соответствий
+    threshold = 0.5  # Максимальное расстояние для поиска соответствий
     result_icp = o3d.pipelines.registration.registration_icp(
         source_pcd,
         target_pcd,
@@ -88,7 +134,10 @@ if __name__ == '__main__':
     )
 
     # Применение найденного преобразования к исходному облаку точек
-    Z = np.asarray(source_pcd.transform(result_icp.transformation).points)
+    result_pcd = source_pcd.transform(result_icp.transformation)
+    Z = np.asarray(result_pcd.points)
+
+    # show_voxel_centers(result_pcd, VOXEL_SIZE)
 
     # Вычисление метрики
     metric = np.linalg.norm(Y - Z)
