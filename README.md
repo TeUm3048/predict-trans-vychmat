@@ -12,19 +12,19 @@
 где каждая точка $`\mathbf{x}_i \in \mathbb{R}^n`$, $`\mathbf{y}_i \in \mathbb{R}^n`$. Для трехмерного случая ($`n = 3`$) эти множества представлены матрицами:
 
 ```math
-X = \begin{pmatrix}
+X = \left(\begin{matrix}
       x_1 & y_1 & z_1 \\
       x_2 & y_2 & z_2 \\
       \vdots & \vdots & \vdots \\
       x_N & y_N & z_N \\
-    \end{pmatrix},
+    \end{matrix}\right),
 \quad
-Y = \begin{pmatrix}
+Y = \left(\begin{matrix}
       x'_1 & y'_1 & z'_1 \\
       x'_2 & y'_2 & z'_2 \\
       \vdots & \vdots & \vdots \\
       x'_N & y'_N & z'_N \\
-    \end{pmatrix}.
+    \end{matrix}\right).
 ```
 
 Цель состоит в нахождении жесткого преобразования (с сохранением расстояний), включающего вращение, смещение и перестановку точек, чтобы преобразовать $`X`$ в $`Y`$.
