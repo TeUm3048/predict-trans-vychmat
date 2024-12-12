@@ -6,16 +6,26 @@ class ICP_registrar:
         self,
         source_pcd: o3d.geometry.PointCloud,
         target_pcd: o3d.geometry.PointCloud,
-        voxel_size=0.03,
         threshold=0.5,
-        init_registration=None,
+        init_registration: o3d.pipelines.registration.RegistrationResult = None,
         iteration=30,
         relative_fitness=1e-06,
         relative_rmse=1e-06,
     ):
+        """
+        Initialize the ICP_registrar object.
+
+        Args:
+            source_pcd (open3d.geometry.PointCloud): The source point cloud.
+            target_pcd (open3d.geometry.PointCloud): The target point cloud.
+            threshold (float, optional): Correspondence distance threshold for determining inliers. Defaults to 0.5.
+            init_registration (open3d.pipelines.registration.RegistrationResult, optional): Initial registration result. Defaults to None.
+            iteration (int, optional): Maximum number of one iterations. Defaults to 30.
+            relative_fitness (float, optional): Relative fitness threshold for convergence. Defaults to 1e-06.
+            relative_rmse (float, optional): Relative RMSE threshold for convergence. Defaults to 1e-06.
+        """
         self.source_pcd = source_pcd
         self.target_pcd = target_pcd
-        self.voxel_size = voxel_size
         if init_registration is None:
             self.result = o3d.pipelines.registration.RegistrationResult()
         else:
