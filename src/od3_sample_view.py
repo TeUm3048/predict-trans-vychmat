@@ -8,6 +8,7 @@ from python.utils import (
     add_noise,
 )
 from python.view_data import plot_comparison
+from python.get_stats import get_stats
 
 
 def preprocess_point_cloud(pcd, voxel_size):
@@ -48,7 +49,7 @@ def execute_global_registration(
                     distance_threshold
                 ),
             ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 500),
+            o3d.pipelines.registration.RANSACConvergenceCriteria(4000000, 1.0),
         )
     )
     return result
@@ -80,8 +81,10 @@ def show_voxel_centers(pcd, voxel_size):
 
 
 if __name__ == '__main__':
-    NOISE_SCALE = 0.05
-    VOXEL_SIZE = NOISE_SCALE  # Размер вокселя для понижения разрешения
+    np.random.seed(26)
+    o3d.utility.random.seed(11)
+    NOISE_SCALE = 0.001
+    VOXEL_SIZE = NOISE_SCALE * 3  # Размер вокселя для понижения разрешения
 
     # Загрузка исходного облака точек
     X = np.loadtxt(open("../assets/cat.csv", "rb"), delimiter=",")
@@ -97,6 +100,12 @@ if __name__ == '__main__':
     X = add_noise(X, sigma=NOISE_SCALE)
 
     Y = permute(Y, _P)
+
+    # Центрирование облаков точек
+    # x_mean = np.mean(X, axis=0)
+    # y_mean = np.mean(Y, axis=0)
+    # X = X - x_mean
+    # Y = Y - y_mean
 
     # Преобразование numpy массивов в облака точек Open3D
     source_pcd = o3d.geometry.PointCloud()
@@ -130,7 +139,10 @@ if __name__ == '__main__':
         target_pcd,
         threshold,
         result_ransac.transformation,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+        estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+        # criteria=o3d.pipelines.registration.ICPConvergenceCriteria(
+        #     max_iteration=1
+        # ),
     )
 
     # Применение найденного преобразования к исходному облаку точек
@@ -138,11 +150,15 @@ if __name__ == '__main__':
     Z = np.asarray(result_pcd.points)
 
     # show_voxel_centers(result_pcd, VOXEL_SIZE)
+    stats = get_stats(result_pcd.compute_point_cloud_distance(target_pcd))
+    print(f"Stats: {stats}")
+    print(f"RMSE: {result_icp.inlier_rmse}, Fitness: {result_icp.fitness}")
 
-    # Вычисление метрики
-    metric = np.linalg.norm(Y - Z)
-    print(f"Metric: {metric}")
     print(f"Transformation matrix:\n{result_icp.transformation}")
 
+    matrix = np.zeros((N, N))
+    for i, j in result_icp.correspondence_set:
+        matrix[j][i] = 1
+    print(np.sum(np.abs(matrix - _P)))
     # Визуализация данных
     plot_comparison(X, Y, Z)
