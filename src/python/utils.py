@@ -47,9 +47,8 @@ def random_transform(
 
     Y = transform(X, _L, _t)
     Y = add_noise(Y, sigma=noise_scale)
-    X = add_noise(X, sigma=noise_scale)
 
     Y = random_permutation(Y)
     transformed_pcd = o3d.geometry.PointCloud()
-    transformed_pcd.points = o3d.utility.Vector3dVector(X)
+    transformed_pcd.points = o3d.utility.Vector3dVector(Y)
     return transformed_pcd

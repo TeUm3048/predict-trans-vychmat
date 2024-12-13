@@ -102,4 +102,5 @@ if __name__ == '__main__':
         matrix[j][i] = 1
     print(np.sum(np.abs(matrix - _P)))
     # Визуализация данных
+
     plot_comparison(X, Y, Z)

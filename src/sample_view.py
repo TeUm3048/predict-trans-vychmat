@@ -25,18 +25,13 @@ if __name__ == '__main__':
 
     L, t = generate_random_rigid_transformation(d=d)
     P = generate_random_permutation(N=N)
-    
+
     Z = permute(transform(X, L, t), P)
-    
+
     metric = np.linalg.norm(Y - Z)
-    
+
     print(f"Metric: {metric}")
-    
+
     # View the data
 
-    
     plot_comparison(X, Y, Z)
-    
-    
-    
-    
