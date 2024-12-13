@@ -2,6 +2,11 @@ import numpy as np
 import open3d as o3d
 
 
+def center_points_to_origin(X: np.matrix):
+    mean = np.mean(X, axis=0)
+    return X - mean
+
+
 def generate_random_permutation(N: int):
     P = np.eye(N, dtype='int8')
     np.random.shuffle(P)

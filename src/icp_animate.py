@@ -4,47 +4,18 @@ import open3d as o3d
 from python.utils import (
     generate_random_permutation,
     generate_random_rigid_transformation,
+    center_points_to_origin,
     transform,
     permute,
     add_noise,
-    center_points_to_origin
 )
 from python.view_data import plot_comparison
 from python.get_stats import get_stats
 from python.registrars import RANSAC_registrar, ICP_registrar
 
 
-
-
-
-def show_voxel_grid(pcd, voxel_size):
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size)
-
-    # Визуализация воксельной сетки
-    o3d.visualization.draw_geometries([voxel_grid])
-
-
-def show_voxel_centers(pcd, voxel_size):
-    # Создание воксельной сетки из облака точек
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size)
-
-    # Извлечение центральных точек вокселей
-    voxel_centers = [
-        voxel.grid_index * voxel_size for voxel in voxel_grid.get_voxels()
-    ]
-    voxel_centers = np.array(voxel_centers, dtype=np.float64)
-
-    # Создание облака точек из центральных точек вокселей
-    voxel_pcd = o3d.geometry.PointCloud()
-    voxel_pcd.points = o3d.utility.Vector3dVector(voxel_centers)
-
-    # Визуализация облака точек, представляющего центры вокселей
-    o3d.visualization.draw_geometries([voxel_pcd])
-
-    
-
-if __name__ == '__main__':
-    np.random.seed(26)
+def icp_animate_main():
+    # np.random.seed(26)
     o3d.utility.random.seed(11)
     NOISE_SCALE = 0.01
     VOXEL_SIZE = NOISE_SCALE * 3  # Размер вокселя для понижения разрешения
@@ -55,7 +26,18 @@ if __name__ == '__main__':
     N, d = X.shape
 
     # Генерация случайного жесткого преобразования и перестановки, добавление шума
-    _L, _t = generate_random_rigid_transformation(d=d)
+    _L = np.array(
+        [
+            [0.4725979, -0.3009115, 0.8283136],
+            [0.8283136, 0.4725979, -0.3009115],
+            [-0.3009115, 0.8283136, 0.4725979],
+        ]
+    )
+    print(repr(_L))
+
+    _t = -4 * np.ones((d, 1))
+    print(_t)
+
     _P = generate_random_permutation(N=N)
 
     Y = transform(X, _L, _t)
@@ -65,8 +47,8 @@ if __name__ == '__main__':
     Y = permute(Y, _P)
 
     # Центрирование облаков точек
-    X = center_points_to_origin(X)
-    Y = center_points_to_origin(Y)
+    # X = center_points_to_origin(X)
+    # Y = center_points_to_origin(Y)
 
     # Преобразование numpy массивов в облака точек Open3D
     source_pcd = o3d.geometry.PointCloud()
@@ -74,21 +56,17 @@ if __name__ == '__main__':
     source_pcd.points = o3d.utility.Vector3dVector(X)
     target_pcd.points = o3d.utility.Vector3dVector(Y)
 
-    ransac_start_time = time.perf_counter()
+    # ransac_start_time = time.perf_counter()
 
-    ransac = RANSAC_registrar(source_pcd, target_pcd, voxel_size=VOXEL_SIZE)
-    ransac.register()
+    # ransac = RANSAC_registrar(source_pcd, target_pcd, voxel_size=VOXEL_SIZE)
+    # ransac.register()
 
-    ransac_time = time.perf_counter() - ransac_start_time
-    result_ransac = ransac.get_registration_result()
+    # ransac_time = time.perf_counter() - ransac_start_time
+    # result_ransac = ransac.get_registration_result()
 
     # Уточнение с помощью ICP
     icp_start_time = time.perf_counter()
-    icp = ICP_registrar(
-        source_pcd,
-        target_pcd,
-        init_registration=result_ransac,
-    )
+    icp = ICP_registrar(source_pcd, target_pcd, threshold=10)
     icp.register()
     icp_time = time.perf_counter() - icp_start_time
     result_icp = icp.get_registration_result()
@@ -103,12 +81,15 @@ if __name__ == '__main__':
     print(f"RMSE: {result_icp.inlier_rmse}, Fitness: {result_icp.fitness}")
 
     print(f"Transformation matrix:\n{result_icp.transformation}")
-    print(f"RANSAC time: {ransac_time}, ICP time: {icp_time}")
+    print(f"ICP time: {icp_time}")
 
     matrix = np.zeros((N, N))
     for i, j in result_icp.correspondence_set:
         matrix[j][i] = 1
     print(np.sum(np.abs(matrix - _P)))
     # Визуализация данных
-
     plot_comparison(X, Y, Z)
+
+
+if __name__ == '__main__':
+    icp_animate_main()
