@@ -1,4 +1,5 @@
 import open3d as o3d
+from open3d.pipelines import registration
 
 
 def preprocess_point_cloud(pcd, voxel_size, max_nn_radius=30, max_nn_fpfh=100):
@@ -11,7 +12,7 @@ def preprocess_point_cloud(pcd, voxel_size, max_nn_radius=30, max_nn_fpfh=100):
             radius=down_radius, max_nn=max_nn_radius
         )
     )
-    pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
+    pcd_fpfh = registration.compute_fpfh_feature(
         pcd_down,
         search_param=o3d.geometry.KDTreeSearchParamHybrid(
             radius=fpfh_radius, max_nn=max_nn_fpfh
@@ -64,24 +65,24 @@ class RANSAC_registrar:
         self.ransac_n = ransac_n
 
     def register(self):
-        self.result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
+        self.result = registration.registration_ransac_based_on_feature_matching(
             self.source_down,
             self.target_down,
             self.source_fpfh,
             self.target_fpfh,
             True,
             self.distance_threshold,
-            o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+            registration.TransformationEstimationPointToPoint(False),
             self.ransac_n,
             [
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(
+                registration.CorrespondenceCheckerBasedOnEdgeLength(
                     self.similarity_threshold
                 ),
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                registration.CorrespondenceCheckerBasedOnDistance(
                     self.distance_threshold
                 ),
             ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(
+            registration.RANSACConvergenceCriteria(
                 self.iteration, self.confidence
             ),
         )

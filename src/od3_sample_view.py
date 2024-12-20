@@ -49,7 +49,7 @@ if __name__ == '__main__':
     VOXEL_SIZE = NOISE_SCALE * 3  # Размер вокселя для понижения разрешения
 
     # Загрузка исходного облака точек
-    X = np.loadtxt(open("../assets/cat.csv", "rb"), delimiter=",")
+    X = np.loadtxt(open('../assets/cat.csv', 'rb'), delimiter=',')
 
     N, d = X.shape
 
@@ -92,10 +92,10 @@ if __name__ == '__main__':
 
     # show_voxel_centers(result_pcd, VOXEL_SIZE)
     stats = get_stats(result_pcd.compute_point_cloud_distance(target_pcd))
-    print(f"Stats: {stats}")
-    print(f"RMSE: {result_icp.inlier_rmse}, Fitness: {result_icp.fitness}")
+    print(f'Stats: {stats}')
+    print(f'RMSE: {result_icp.inlier_rmse}, Fitness: {result_icp.fitness}')
 
-    print(f"Transformation matrix:\n{result_icp.transformation}")
+    print(f'Transformation matrix:\n{result_icp.transformation}')
 
     matrix = np.zeros((N, N))
     for i, j in result_icp.correspondence_set:

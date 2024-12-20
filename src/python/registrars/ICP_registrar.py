@@ -1,4 +1,5 @@
 import open3d as o3d
+from open3d.pipelines import registration
 
 
 class ICP_registrar:
@@ -17,7 +18,7 @@ class ICP_registrar:
         self.target_pcd = target_pcd
         self.voxel_size = voxel_size
         if init_registration is None:
-            self.result = o3d.pipelines.registration.RegistrationResult()
+            self.result = registration.RegistrationResult()
         else:
             self.result = init_registration
         self.threshold = threshold
@@ -27,13 +28,13 @@ class ICP_registrar:
 
     def register(self):
         # Уточнение с помощью ICP
-        self.result = o3d.pipelines.registration.registration_icp(
+        self.result = registration.registration_icp(
             self.source_pcd,
             self.target_pcd,
             self.threshold,
             self.result.transformation,
-            estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(),
-            criteria=o3d.pipelines.registration.ICPConvergenceCriteria(
+            estimation_method=registration.TransformationEstimationPointToPoint(),
+            criteria=registration.ICPConvergenceCriteria(
                 max_iteration=self.iteration,
                 relative_fitness=self.relative_fitness,
                 relative_rmse=self.relative_rmse,
