@@ -30,6 +30,7 @@ def plot_comparison(X, Y, Z):
         )
     )
 
+    
     # Отображение точек в пространстве
     fig.add_trace(
         go.Scatter3d(
