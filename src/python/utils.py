@@ -1,5 +1,6 @@
 import numpy as np
 import open3d as o3d
+import pandas as pd
 
 
 def generate_random_permutation(N: int):
@@ -48,7 +49,8 @@ def cloud_to_matrix(pcd: o3d.geometry.PointCloud) -> np.ndarray:
 
 
 def random_transform(
-        input_pcd: o3d.geometry.PointCloud, noise_scale=0.01,
+    input_pcd: o3d.geometry.PointCloud,
+    noise_scale=0.01,
 ) -> o3d.geometry.PointCloud:
     X = np.asarray(input_pcd.points)
     N, d = X.shape
@@ -86,3 +88,60 @@ def generate_uniform_point_on_sphere(radius, offset):
     point += offset
 
     return point
+
+
+def calc_transformation_distance(L1, t1, transformation):
+    L2 = transformation[:3, :3]
+    t2 = transformation[:3, 3].reshape(-1, 1)
+    return np.linalg.norm(L1 - L2), np.linalg.norm(t1 - t2)
+
+
+def estimate_metrics_by_angle(X, phi, method):
+    _L, _t, source_pcd, target_pcd = generate_transformation_by_angle(X, phi)
+
+    result = method(source_pcd, target_pcd)
+
+    distance = calc_transformation_distance(_L, _t, result.transformation)
+
+    return result.inlier_rmse, result.fitness, *distance
+
+
+def generate_transformation_by_angle(X, phi, noise_scale=0, permutation=False):
+    N, d = X.shape
+
+    _L = np.array(
+        [
+            [np.cos(phi), -np.sin(phi), 0],
+            [np.sin(phi), np.cos(phi), 0],
+            [0, 0, 1],
+        ]
+    )
+    _t = np.zeros((d, 1))
+
+    Y = transform(X, _L, _t)
+
+    if permutation:
+        Y = random_permutation(Y)
+
+    Y = add_noise(Y, sigma=noise_scale)
+    source_pcd = matrix_to_cloud(X)
+    target_pcd = matrix_to_cloud(Y)
+    return _L, _t, source_pcd, target_pcd
+
+
+def estimate_metrics(X, n, method):
+    df = pd.DataFrame(
+        columns=[
+            "rmse",
+            "inlier_fitness",
+            "rotation_distance",
+            "translation_distance",
+        ]
+    )
+    step = 2 * np.pi / 8 / (n + 1)
+    start = -np.pi / 4 + step
+    end = np.pi / 4
+    for phi in np.arange(start, end, step):
+        estimation = estimate_metrics_by_angle(X, phi, method)
+        df.loc[np.rad2deg(phi)] = estimation
+    return df

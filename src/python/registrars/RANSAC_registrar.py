@@ -32,7 +32,7 @@ class RANSAC_registrar:
         similarity_threshold=0.9,
         distance_threshold=None,
         confidence=0.999,
-        iteration=4000000,
+        iteration=100000,
         ransac_n=4,
     ):
         self.source_pcd = source_pcd

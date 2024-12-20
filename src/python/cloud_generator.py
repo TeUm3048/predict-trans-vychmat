@@ -27,10 +27,9 @@ def force(
     return point + applied
 
 
-def generate_cloud_matrix(n: int):
+def generate_cloud_matrix(n: int, force_count: int = 40):
     sphere_radius = 100
     sphere_center = np.zeros(3)
-    force_count = 40
     force_radius = 250
 
     point_generator = partial(
@@ -42,6 +41,8 @@ def generate_cloud_matrix(n: int):
         force_application_point = points[np.random.randint(0, n)]
         sign = np.random.randint(0, 2, 3) * 2 - 1
         force_vector = np.random.uniform(sphere_radius * 0.1, sphere_radius * 0.3, 3) * sign
+        # force_application_point = np.array([0, 0, 100])
+        # force_vector = np.array([0, 0, 150])
 
         points = force(points, force_vector, force_application_point, force_radius)
     return points
