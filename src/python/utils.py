@@ -37,6 +37,16 @@ def read_pcd(filename: str) -> o3d.geometry.PointCloud:
     return pcd
 
 
+def matrix_to_cloud(matrix: np.ndarray) -> o3d.geometry.PointCloud:
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(matrix)
+    return pcd
+
+
+def cloud_to_matrix(pcd: o3d.geometry.PointCloud) -> np.ndarray:
+    return np.asarray(pcd.points)
+
+
 def random_transform(
         input_pcd: o3d.geometry.PointCloud, noise_scale=0.01,
 ) -> o3d.geometry.PointCloud:
@@ -49,6 +59,30 @@ def random_transform(
     Y = add_noise(Y, sigma=noise_scale)
 
     Y = random_permutation(Y)
-    transformed_pcd = o3d.geometry.PointCloud()
-    transformed_pcd.points = o3d.utility.Vector3dVector(Y)
-    return transformed_pcd
+    return matrix_to_cloud(Y)
+
+
+def generate_uniform_point_on_sphere(radius, offset):
+
+    # Генерация трех случайных значений из нормального распределения
+    point = np.random.normal(size=3)
+
+    # Рассчет длины вектора
+    magnitude = np.linalg.norm(point)
+
+    # Нормализация вектора, если длина не равна нулю
+    while magnitude == 0:
+        point = np.random.normal(size=3)
+
+        # Рассчет длины вектора
+        magnitude = np.linalg.norm(point)
+
+    point /= magnitude
+
+    # Масштабирование вектора до указанного радиуса
+    point *= radius
+
+    # Прибавление смещения к каждой координате
+    point += offset
+
+    return point
