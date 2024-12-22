@@ -8,7 +8,12 @@ def count_force_coefficient(
         point: np.ndarray, force_application_point: np.ndarray, force_radius
 ):
     distance: np.float64 = np.linalg.norm(point - force_application_point, axis=1) ** 4
-    return 2 * np.arctan(force_radius ** 4 / (4**4 * distance))/np.pi
+    with np.errstate(divide='ignore', invalid='ignore'):
+        coeff = np.where(distance != 0,
+                         2 * np.arctan(force_radius ** 4 / (4**4 * distance))/np.pi,
+                         1,
+                        )
+    return coeff
 
 
 def force(

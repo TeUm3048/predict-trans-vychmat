@@ -12,7 +12,7 @@ def icp(source_pcd, target_pcd):
 
 
 def main():
-    np.random.seed(23)
+    np.random.seed(111)
     NOISE_SCALE = 0.01
     VOXEL_SIZE = NOISE_SCALE * 3
 
