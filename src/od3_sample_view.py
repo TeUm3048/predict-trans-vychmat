@@ -1,15 +1,15 @@
 import numpy as np
 import open3d as o3d
-from python.utils import (
+from predict_transformation.utils import (
     generate_random_permutation,
     generate_random_rigid_transformation,
     transform,
     permute,
     add_noise,
 )
-from python.view_data import plot_comparison
-from python.get_stats import get_stats
-from python.registrars import RANSAC_registrar, ICP_registrar
+from predict_transformation.view_data import plot_comparison
+from predict_transformation.get_stats import get_stats
+from predict_transformation.registrars import RANSAC_registrar, ICP_registrar
 
 
 def center_points_to_origin(X: np.matrix):
