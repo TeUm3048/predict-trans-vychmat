@@ -70,7 +70,7 @@ df = utils.estimate_metrics(Y, 5, icp)
 view_data.plot_comparison(Y)
 ```
 
-## Check runs
+## Проверочка на верочку
 
 ```{python}
 view_data.show_estimation_method_plot(df, title="ICP")
