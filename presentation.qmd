@@ -1,0 +1,77 @@
+---
+title: "Robast point cloub register"
+author:
+  - name: Ivan Ryzhikov
+    email: iwanryzij@yandex.ru
+  - name: Mark Ilyasov
+format: 
+  revealjs:
+    transition: slide
+editor: visual
+execute:
+  echo: false
+jupyter: python3
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished presentation. To learn more about Quarto presentations see <https://quarto.org/docs/presentations/>.
+
+## Bullets
+
+When you click the **Render** button a document will be generated that includes:
+
+-   Content authored with markdown
+-   Output from executable code
+
+## Code
+
+When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{python}
+#| echo: true
+#| code-line-numbers: "|1|2|3"
+
+1 + 1
+sada = 2
+sada
+```
+
+## Check runs
+
+```{python}
+
+import numpy as np
+from src.python import cloud_generator
+from src.python import utils
+from src.python.registrars import ICP_registrar
+from src.python import view_data
+import plotly.io as pio
+pio.renderers.default = 'notebook'
+```
+
+```{python}
+def icp(source_pcd, target_pcd):
+    registrar = ICP_registrar(source_pcd, target_pcd, threshold=100)
+    registrar.register()
+    return registrar.get_registration_result()
+```
+
+```{python}
+np.random.seed(111)
+NOISE_SCALE = 0.01
+VOXEL_SIZE = NOISE_SCALE * 3
+
+X = cloud_generator.generate_cloud_matrix(10000, 40)
+Y = utils.add_noise(X, NOISE_SCALE)
+Y = utils.random_permutation(Y)
+
+df = utils.estimate_metrics(Y, 5, icp)
+view_data.plot_comparison(Y)
+```
+
+## Проверочка на верочку
+
+```{python}
+view_data.show_estimation_method_plot(df, title="ICP")
+```

@@ -1,5 +1,5 @@
 import plotly.graph_objects as go
-from python.cloud_generator import generate_cloud_matrix
+from predict_transformation.cloud_generator import generate_cloud_matrix
 
 
 if __name__ == '__main__':

@@ -1,9 +1,9 @@
 import numpy as np
 import open3d as o3d
-from python.utils import read_pcd, random_transform, cloud_to_matrix
-from python.get_stats import get_stats
-from python.registrars import RANSAC_registrar, ICP_registrar
-from python.view_data import plot_comparison
+from predict_transformation.utils import read_pcd, random_transform, cloud_to_matrix
+from predict_transformation.get_stats import get_stats
+from predict_transformation.registrars import RANSAC_registrar, ICP_registrar
+from predict_transformation.view_data import plot_comparison
 from copy import deepcopy
 
 

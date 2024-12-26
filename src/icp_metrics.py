@@ -1,8 +1,8 @@
 import numpy as np
-from python import cloud_generator
-from python import utils
-from python.registrars import ICP_registrar
-from python import view_data
+from predict_transformation import cloud_generator
+from predict_transformation import utils
+from predict_transformation.registrars import ICP_registrar
+from predict_transformation import view_data
 
 
 def icp(source_pcd, target_pcd):
@@ -12,7 +12,7 @@ def icp(source_pcd, target_pcd):
 
 
 def main():
-    np.random.seed(23)
+    np.random.seed(111)
     NOISE_SCALE = 0.01
     VOXEL_SIZE = NOISE_SCALE * 3
 

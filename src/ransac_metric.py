@@ -1,8 +1,8 @@
 import numpy as np
-from python import cloud_generator
-from python import utils
-from python.registrars import RANSAC_registrar
-from python import view_data
+from predict_transformation import cloud_generator
+from predict_transformation import utils
+from predict_transformation.registrars import RANSAC_registrar
+from predict_transformation import view_data
 from od3_sample_view import show_voxel_centers
 
 

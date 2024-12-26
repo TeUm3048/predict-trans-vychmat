@@ -1,12 +1,12 @@
 import numpy as np
-from python.utils import (
+from predict_transformation.utils import (
     generate_random_permutation,
     generate_random_rigid_transformation,
     transform,
     permute,
     add_noise,
 )
-from python.view_data import plot_comparison
+from predict_transformation.view_data import plot_comparison
 
 if __name__ == '__main__':
     NOISE_SCALE = 0.05
