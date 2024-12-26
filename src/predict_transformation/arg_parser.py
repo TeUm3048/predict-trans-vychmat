@@ -7,9 +7,13 @@ from predict_transformation import view_data
 import open3d
 import click_aliases
 from copy import deepcopy
+import os
 
 
 def load_cloud(path: str, with_headers: bool = False):
+    if not os.path.exists(path):
+        raise FileNotFoundError(f'File not found: {path}')
+
     if path.endswith('.csv'):
         cloud = np.loadtxt(
             open(path, 'rb'),
@@ -148,8 +152,12 @@ def predict(
     view,
 ):
     "Predict transformation between two point clouds."
-    source_pcd = load_cloud(source, with_headers=with_headers)
-    target_pcd = load_cloud(target, with_headers=with_headers)
+    try:
+        source_pcd = load_cloud(source, with_headers=with_headers)
+        target_pcd = load_cloud(target, with_headers=with_headers)
+    except FileNotFoundError as e:
+        click.echo(e)
+        return
 
     registrar_result = None
     if ransac:
@@ -213,7 +221,12 @@ def predict(
 )
 def perturb_cloud(input, output, noise_scale, seed):
     "Perturb a point cloud."
-    cloud = load_cloud(input)
+    try:
+        cloud = load_cloud(input)
+    except FileNotFoundError as e:
+        click.echo(e)
+        return
+
     if seed is not None:
         np.random.seed(seed)
 
@@ -237,7 +250,11 @@ def perturb_cloud(input, output, noise_scale, seed):
 @click.option('--voxel-size', default=0.01, help='Size of the voxel')
 def downsample_cloud(input, output, voxel_size):
     "Downsample a point cloud."
-    cloud = load_cloud(input)
+    try:
+        cloud = load_cloud(input)
+    except FileNotFoundError as e:
+        click.echo(e)
+        return
     downsampled_cloud = utils.downsample(cloud, voxel_size)
     save_cloud(downsampled_cloud, output)
     click.echo(f'Downsampled point cloud saved to {output}')
