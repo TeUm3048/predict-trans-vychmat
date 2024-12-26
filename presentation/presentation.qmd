@@ -1,0 +1,129 @@
+---
+title: "Поиск жёсткого преобразования облака точек"
+author:
+  - name: Ivan Ryzhikov
+    email: iwanryzij@yandex.ru
+  - name: Mark Ilyasov
+format: 
+  revealjs:
+    transition: slide
+    chalkboard: true
+editor: visual
+execute:
+  echo: false
+jupyter: python3
+---
+
+## Постановка задачи
+
+Найти жёсткое преобразование точек
+
+-   Соответвие между начальными и конечными точками не известно
+
+-   Данные имеют шум
+
+::: callout-note
+Жёсткое преобразование сохраняет расстояние между точками, т.е. поворот + параллельный перенос
+:::
+
+## Более формально {.smaller}
+
+Дано: $X = \{ \mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N \} \subset \mathbb{R}^n$, 
+$Y = \{ \mathbf{y}_1, \mathbf{y}_2, \dots, \mathbf{y}_N \} \subset \mathbb{R}^n$
+
+$$
+\mathbf{y}_{\pi(i)} = R \mathbf{x}_i + t + \boldsymbol{\epsilon}_i, \quad \forall i = 1, \dots, N,
+$$
+
+где 
+
+- $\boldsymbol{\epsilon}_i \in \mathbb{R}^n$ — вектор шума для точки $i$, $\boldsymbol{\epsilon}_i \sim \mathcal{N}(0,\, (\sigma^2, \sigma^2,\sigma^2))$
+
+-   $R \in SO(3)$ — матрица вращения $R^T R = I$, $\det(R) = 1$
+
+-   $t \in \mathbb{R}^n$ — вектор смещения,
+
+-   $\pi: \{1, \dots, N\} \to \{1, \dots, N\}$ — перестановка индексов.
+
+$$
+\underset{R \in SO(3),\,t,\,\pi}{\arg \min}\ \sum_{i=1}^N \| R \mathbf{x}_i + t - \mathbf{y}_{\pi(i)} + \boldsymbol{\epsilon}_i \|^2,
+$$
+
+## Более формально {.smaller auto-animate=true}
+
+$$
+Y^T = R X^T P + t \begin{pmatrix} 1 & \dots & 1 \end{pmatrix}_{1 \times N} + E,
+$$
+
+- $\|\cdot\|_F$ — фробениусова норма,
+- $R \in SO(3)$ — матрица вращения ($R^T R = I$, $\det(R) = 1$),
+- $P$ — матрица перестановки
+  - $P_{ij} \in \{0, 1\}$; 
+  - каждая строка и столбец имеют одну единицу — $\forall i \sum_{j=1}^N P_{ij} = 1$, $\forall j \sum_{i=1}^N P_{ij} = 1$
+- $E \in \mathbb{R}^{n \times N}$ — матрица шума с $E[:, i] = \boldsymbol{\epsilon}_i$.
+
+::: {data-id="box1"}
+
+$$
+\underset{R \in SO(3),\,t,\,P}{\arg \min}\ \| R X^T P + t \begin{pmatrix} 1 & \dots & 1 \end{pmatrix}_{1 \times N} - Y^T \|_F^2
+$$
+
+:::
+
+## Проблема {.smaller auto-animate=true}
+
+
+::: {data-id="box1"}
+ 
+$$
+\underset{R \in SO(3),\,t,\,P}{\arg \min}\ \| R X^TP + t \begin{pmatrix} 1 & \dots & 1 \end{pmatrix}_{1 \times N} - Y^T \|_F^2
+$$
+:::
+
+Ключевая сложность — поиск матрицы соответствия.
+
+Целевая функция приобретает дискретную форму — обычные методы оптимизации не применимы
+
+::: {.fragment}
+Алгоритм Кабша(-Умеямы) умеет решать успрощенную задачу с известным соответствием
+
+
+$$
+\underset{R \in SO(3),\,t}{\arg \min}\ \| R X^T + t \begin{pmatrix} 1 & \dots & 1 \end{pmatrix}_{1 \times N} - Y^T \|_F^2
+$$
+:::
+
+## Решение
+
+Избавимся от матрицы перестановок — будем уменьшать расстояние между облаками.
+
+::: {.fragment}
+
+Изменим целевую функцию
+
+
+$$
+\underset{{R \in SO(3),\ t}}{\arg \min}\ \sum_{i=1}^N \| R \mathbf{x}_i + t - \mathbf{y}_{\sigma(i)} \|^2
+$$
+
+- $\sigma(i)$ — индекс ближайшей точки $\mathbf{y}_{\sigma(i)} \in Y$ для $\mathbf{x}_i \in X$ ^[отображение не биективно, индексы ко]
+
+:::
+
+## Алгоритм ICP (Iteartive Closest Point)
+
+
+Итеративный метод поиска жёсткого преобразования
+
+Задаём начальное преобразование
+
+Каждая итерация включает в себя 2 шага:
+  1. Каждой точке сопоставляется ближайшая из другого облака
+  2. Обновляем преобразование, используя SVD разложение
+
+0. Инициализация начального приближения преобразования
+1. Итерация цикла
+1.1 Применение текущего приближения преобразования
+1.2 Построение соответсвия между точками через поиск ближайшей
+1.3 Обновление приближения через алгоритм Кабша для найденного соответсвия
+1.4 Проверка сходимости алгоритма через метрику jdkfjlsd
