@@ -43,7 +43,7 @@ def save_cloud(cloud, path: str):
 
 
 def estimate_voxel_size(cloud):
-    return np.median(cloud.compute_nearest_neighbor_distance()) * 4
+    return np.min(cloud.compute_nearest_neighbor_distance())
 
 
 @click.group(cls=click_aliases.ClickAliasedGroup)
@@ -152,6 +152,7 @@ def predict(
     view,
 ):
     "Predict transformation between two point clouds."
+    click.echo('Predicting transformation...')
     try:
         source_pcd = load_cloud(source, with_headers=with_headers)
         target_pcd = load_cloud(target, with_headers=with_headers)
@@ -161,12 +162,16 @@ def predict(
 
     registrar_result = None
     if ransac:
+        click.echo('RANSAC')
         voxel_size = estimate_voxel_size(source_pcd)
         registrar = RANSAC_registrar(source_pcd, target_pcd, voxel_size=voxel_size)
         registrar.register()
         registrar_result = registrar.get_registration_result()
+        print(registrar_result.transformation)
 
     if icp:
+        click.echo('ICP')
+        threshold=utils.estimate_threshold(source_pcd, target_pcd)
         registrar = ICP_registrar(
             source_pcd,
             target_pcd,

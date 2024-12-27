@@ -145,3 +145,11 @@ def estimate_metrics(X, n, method):
         estimation = estimate_metrics_by_angle(X, phi, method)
         df.loc[np.rad2deg(phi)] = estimation
     return df
+
+
+def estimate_threshold(source_pcd, target_pcd):
+    X = np.asarray(source_pcd.points)
+    Y = np.asarray(target_pcd.points)
+    mean_X = np.mean(X, axis=0)
+    mean_Y = np.mean(Y, axis=0)
+    return np.linalg.norm(mean_X - mean_Y) * 1.2

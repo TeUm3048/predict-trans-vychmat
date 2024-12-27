@@ -15,7 +15,7 @@ def plot_comparison(X, Y=None, Z=None, *args):
             z=X[:, 2],
             name='Initial data',
             mode='markers',
-            marker=dict(size=1, opacity=0.2, color='gray'),
+            marker=dict(size=2, opacity=0.2, color='gray'),
         )
     )
 
@@ -28,7 +28,7 @@ def plot_comparison(X, Y=None, Z=None, *args):
                 z=Y[:, 2],
                 name='Noisy data',
                 mode='markers',
-                marker=dict(size=1, opacity=0.2, color='green'),
+                marker=dict(size=2, opacity=0.2, color='green'),
             )
         )
 
@@ -41,7 +41,7 @@ def plot_comparison(X, Y=None, Z=None, *args):
                 z=Z[:, 2],
                 name='Solution',
                 mode='markers',
-                marker=dict(size=1, opacity=0.2, color='crimson'),
+                marker=dict(size=2, opacity=0.2, color='crimson'),
             )
         )
 
