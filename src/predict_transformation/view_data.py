@@ -15,7 +15,7 @@ def plot_comparison(X, Y=None, Z=None, *args):
             z=X[:, 2],
             name='Initial data',
             mode='markers',
-            marker=dict(size=1, opacity=0.2, color='gray'),
+            marker=dict(size=1, opacity=0.2, color='blue'),
         )
     )
 

@@ -16,7 +16,7 @@ jupyter: python3
 
 ## Постановка задачи
 
-Найти жёсткое преобразование точек
+Даны два облака точек. Найти жёсткое преобразование из одного в другое
 
 -   Соответвие между начальными и конечными точками не известно
 
@@ -28,16 +28,15 @@ jupyter: python3
 
 ## Более формально {.smaller}
 
-Дано: $X = \{ \mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N \} \subset \mathbb{R}^n$, 
-$Y = \{ \mathbf{y}_1, \mathbf{y}_2, \dots, \mathbf{y}_N \} \subset \mathbb{R}^n$
+Дано: $X = \{ \mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N \} \subset \mathbb{R}^n$, $Y = \{ \mathbf{y}_1, \mathbf{y}_2, \dots, \mathbf{y}_N \} \subset \mathbb{R}^n$
 
 $$
 \mathbf{y}_{\pi(i)} = R \mathbf{x}_i + t + \boldsymbol{\epsilon}_i, \quad \forall i = 1, \dots, N,
 $$
 
-где 
+где
 
-- $\boldsymbol{\epsilon}_i \in \mathbb{R}^n$ — вектор шума для точки $i$, $\boldsymbol{\epsilon}_i \sim \mathcal{N}(0,\, (\sigma^2, \sigma^2,\sigma^2))$
+-   $\boldsymbol{\epsilon}_i \in \mathbb{R}^n$ — вектор шума для точки $i$, $\boldsymbol{\epsilon}_i \sim \mathcal{N}(0,\, (\sigma^2, \sigma^2,\sigma^2))$
 
 -   $R \in SO(3)$ — матрица вращения $R^T R = I$, $\det(R) = 1$
 
@@ -49,34 +48,30 @@ $$
 \underset{R \in SO(3),\,t,\,\pi}{\arg \min}\ \sum_{i=1}^N \| R \mathbf{x}_i + t - \mathbf{y}_{\pi(i)} + \boldsymbol{\epsilon}_i \|^2,
 $$
 
-## Более формально {.smaller auto-animate=true}
+## В терминах матриц {.smaller auto-animate="true"}
 
 $$
 Y^T = R X^T P + t \begin{pmatrix} 1 & \dots & 1 \end{pmatrix}_{1 \times N} + E,
 $$
 
-- $\|\cdot\|_F$ — фробениусова норма,
-- $R \in SO(3)$ — матрица вращения ($R^T R = I$, $\det(R) = 1$),
-- $P$ — матрица перестановки
-  - $P_{ij} \in \{0, 1\}$; 
-  - каждая строка и столбец имеют одну единицу — $\forall i \sum_{j=1}^N P_{ij} = 1$, $\forall j \sum_{i=1}^N P_{ij} = 1$
-- $E \in \mathbb{R}^{n \times N}$ — матрица шума с $E[:, i] = \boldsymbol{\epsilon}_i$.
+-   $\|\cdot\|_F$ — фробениусова норма,
+-   $R \in SO(3)$ — матрица вращения ($R^T R = I$, $\det(R) = 1$),
+-   $P$ — матрица перестановки
+    -   $P_{ij} \in \{0, 1\}$;
+    -   каждая строка и столбец имеют одну единицу — $\forall i \sum_{j=1}^N P_{ij} = 1$, $\forall j \sum_{i=1}^N P_{ij} = 1$
+-   $E \in \mathbb{R}^{n \times N}$ — матрица шума с $E[:, i] = \boldsymbol{\epsilon}_i$.
 
 ::: {data-id="box1"}
-
 $$
 \underset{R \in SO(3),\,t,\,P}{\arg \min}\ \| R X^T P + t \begin{pmatrix} 1 & \dots & 1 \end{pmatrix}_{1 \times N} - Y^T \|_F^2
 $$
-
 :::
 
-## Проблема {.smaller auto-animate=true}
-
+## Проблема {auto-animate="true"}
 
 ::: {data-id="box1"}
- 
 $$
-\underset{R \in SO(3),\,t,\,P}{\arg \min}\ \| R X^TP + t \begin{pmatrix} 1 & \dots & 1 \end{pmatrix}_{1 \times N} - Y^T \|_F^2
+\underset{R \in SO(3),\,t,\,P}{\arg \min}\ \| R X^TP + t \begin{pmatrix} 1 & . . . & 1 \end{pmatrix}_{1 \times N} - Y^T \|_F^2
 $$
 :::
 
@@ -84,9 +79,8 @@ $$
 
 Целевая функция приобретает дискретную форму — обычные методы оптимизации не применимы
 
-::: {.fragment}
+::: fragment
 Алгоритм Кабша(-Умеямы) умеет решать успрощенную задачу с известным соответствием
-
 
 $$
 \underset{R \in SO(3),\,t}{\arg \min}\ \| R X^T + t \begin{pmatrix} 1 & \dots & 1 \end{pmatrix}_{1 \times N} - Y^T \|_F^2
@@ -97,33 +91,80 @@ $$
 
 Избавимся от матрицы перестановок — будем уменьшать расстояние между облаками.
 
-::: {.fragment}
-
+::: fragment
 Изменим целевую функцию
-
 
 $$
 \underset{{R \in SO(3),\ t}}{\arg \min}\ \sum_{i=1}^N \| R \mathbf{x}_i + t - \mathbf{y}_{\sigma(i)} \|^2
 $$
 
-- $\sigma(i)$ — индекс ближайшей точки $\mathbf{y}_{\sigma(i)} \in Y$ для $\mathbf{x}_i \in X$ ^[отображение не биективно, индексы ко]
-
+-   $\sigma(i)$ — индекс ближайшей точки $\mathbf{y}_{\sigma(i)} \in Y$ для $\mathbf{x}_i \in X$ [^1]
 :::
 
-## Алгоритм ICP (Iteartive Closest Point)
+[^1]: отображение не биективно, индексы могут совпадать для разных точек
+
+## Идея алгоритма ICP
+
+**Iteartive Closest Point** — итеративный метод поиска жёсткого преобразования через сопоставление ближайших точек.
+В качестве приближенного соответсвия точек используется сопоставление каждой ближайшей к ней (из другого облака). Для полученного соответствия можно использовать алгоритм Кабша
+
+## Этапы алгоритма ICP
+1.  Инициализация начального преобразования
+2.  Итерация цикла
+    1.  Применение текущего преобразования
+    2.  Построение соответствия между точками через поиск ближайшей
+    3.  Обновление приближения через алгоритм Кабша для найденного соответсвия
+    4.  Проверка сходимости алгоритма через метрику
+
+## Подготовка к исследованию методов {.center}
 
 
-Итеративный метод поиска жёсткого преобразования
+## Генерация примеров
+```{python}
+import plotly
+plotly.io.renderers.default = 'notebook'
 
-Задаём начальное преобразование
+import numpy as np
+from predict_transformation import cloud_generator
+from predict_transformation import utils
+from predict_transformation.registrars import ICP_registrar
+from predict_transformation import view_data
+```
 
-Каждая итерация включает в себя 2 шага:
-  1. Каждой точке сопоставляется ближайшая из другого облака
-  2. Обновляем преобразование, используя SVD разложение
+```{python}
+np.random.seed(222)
+potato = cloud_generator.generate_cloud_matrix(10000, 40)
+view_data.plot_comparison(potato)
+```
 
-0. Инициализация начального приближения преобразования
-1. Итерация цикла
-1.1 Применение текущего приближения преобразования
-1.2 Построение соответсвия между точками через поиск ближайшей
-1.3 Обновление приближения через алгоритм Кабша для найденного соответсвия
-1.4 Проверка сходимости алгоритма через метрику jdkfjlsd
+## Исследование метода ICP
+
+```{python}
+def icp(source_pcd, target_pcd):
+  registrar = ICP_registrar(source_pcd, target_pcd, threshold=100)
+  registrar.register()
+  return registrar.get_registration_result()
+
+
+np.random.seed(111)
+NOISE_SCALE = 0.01
+VOXEL_SIZE = NOISE_SCALE * 3
+
+X = cloud_generator.generate_cloud_matrix(10000, 40)
+Y = utils.add_noise(X, NOISE_SCALE)
+Y = utils.random_permutation(Y)
+
+df = utils.estimate_metrics(Y, 40, icp, -180, 180)
+view_data.show_estimation_method_plot(df, title="ICP")
+```
+
+##
+
+```{python}
+view_data.plot_comparison(X)
+```
+
+## Ограниченность ICP
+Использование упрощенной метрики ведет к тому, что целевая функция преобретает значительное количество локальных минимумов. В связи с чем, использование алгоритма ограничено: ICP показывает хорошие результаты только при малых углах поворота
+
+

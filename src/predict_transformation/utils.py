@@ -129,7 +129,7 @@ def generate_transformation_by_angle(X, phi, noise_scale=0, permutation=False):
     return _L, _t, source_pcd, target_pcd
 
 
-def estimate_metrics(X, n, method):
+def estimate_metrics(X, n, method, start=-40, end=40):
     df = pd.DataFrame(
         columns=[
             "rmse",
@@ -138,9 +138,9 @@ def estimate_metrics(X, n, method):
             "translation_distance",
         ]
     )
-    step = 2 * np.pi / 8 / (n + 1)
-    start = -np.pi / 4 + step
-    end = np.pi / 4
+    start = np.deg2rad(start)
+    end = np.deg2rad(end)
+    step = (end - start) / n
     for phi in np.arange(start, end, step):
         estimation = estimate_metrics_by_angle(X, phi, method)
         df.loc[np.rad2deg(phi)] = estimation
