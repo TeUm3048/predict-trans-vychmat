@@ -3,10 +3,10 @@ from open3d.pipelines import registration
 
 
 def preprocess_point_cloud(pcd, voxel_size, max_nn_radius=30, max_nn_fpfh=100):
-    down_radius = voxel_size * 2
-    fpfh_radius = voxel_size * 5
+    down_radius = voxel_size * 4
+    fpfh_radius = voxel_size * 10
 
-    pcd_down = pcd.voxel_down_sample(voxel_size)
+    pcd_down = pcd # pcd.voxel_down_sample(voxel_size)
     pcd_down.estimate_normals(
         search_param=o3d.geometry.KDTreeSearchParamHybrid(
             radius=down_radius, max_nn=max_nn_radius
