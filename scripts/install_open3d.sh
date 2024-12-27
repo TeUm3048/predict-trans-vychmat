@@ -30,7 +30,7 @@ if [ -d "Open3D" ]; then
     fi
 else
     echo "Cloning forked Open3D repository..."
-    git clone --single-branch --branch $BRANCH_NAME $REPO_URL
+    git clone --single-branch --branch $BRANCH_NAME $REPO_URL --depth 1
     cd Open3D
 fi
 echo "Installing Open3D..."
