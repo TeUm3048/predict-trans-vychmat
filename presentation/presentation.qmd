@@ -105,10 +105,10 @@ $$
 
 ## Идея алгоритма ICP
 
-**Iteartive Closest Point** — итеративный метод поиска жёсткого преобразования через сопоставление ближайших точек.
-В качестве приближенного соответсвия точек используется сопоставление каждой ближайшей к ней (из другого облака). Для полученного соответствия можно использовать алгоритм Кабша
+**Iteartive Closest Point** — итеративный метод поиска жёсткого преобразования через сопоставление ближайших точек. В качестве приближенного соответсвия точек используется сопоставление каждой ближайшей к ней (из другого облака). Для полученного соответствия можно использовать алгоритм Кабша
 
 ## Этапы алгоритма ICP
+
 1.  Инициализация начального преобразования
 2.  Итерация цикла
     1.  Применение текущего преобразования
@@ -116,28 +116,98 @@ $$
     3.  Обновление приближения через алгоритм Кабша для найденного соответсвия
     4.  Проверка сходимости алгоритма через метрику
 
+## Сходимость ICP
+
+Каждую итерацию выбирается соответствие между ближайшими точками в облаках. Алгоритм Кабша уменьшает расстояние между этими точками. Целевая функция монотонно убывает (невозрастает). Таким образом, ICP приобретает локальную сходимость.
+
+::: callout-tip
+## Применимость алгоритма к задаче
+
+Минимум исходной метрики является минимумом так же и для целевой функции ICP
+:::
+
 ## Подготовка к исследованию методов {.center}
 
-
-## Генерация примеров
 ```{python}
+from functools import partial
+
 import plotly
 plotly.io.renderers.default = 'notebook'
 
 import numpy as np
 from predict_transformation import cloud_generator
 from predict_transformation import utils
-from predict_transformation.registrars import ICP_registrar
+from predict_transformation.registrars import ICP_registrar, RANSAC_registrar
 from predict_transformation import view_data
 ```
 
+## Генерация примеров (1/2) {.smaller}
+
+::::: columns
+::: {.column width="40%"}
+#### Сферическое облако {.center}
+
+Точки $\mathbf{p}$ на сфере — результат нормирования случайного вектора $\mathbf{v}$ с нормально-распределенными компонентами $x$, $y$ и $z$, с последующим домножением на радиус $r$ $$
+\mathbf{p} = r \cdot \frac{\mathbf{v}}{\|\mathbf{v}\|}
+$$ $$
+\quad \mathbf{v} = (x, y, z) \sim \mathcal{N}(0, \sigma^2)
+$$
+:::
+
+::: {.column width="60%"}
+```{python}
+np.random.seed(222)
+sphere_radius = 100
+sphere_center = np.zeros(3)
+point_generator = partial(
+  utils.generate_uniform_point_on_sphere,
+  sphere_radius,
+  sphere_center,
+)
+n = 4000
+sphere = np.vstack([point_generator() for _ in range(n)])
+view_data.plot_comparison(sphere)
+```
+:::
+:::::
+
+## Генерация примеров (2/2)
+
+::::: columns
+::: {.column width="40%"}
+#### Деформация сферы {.center}
+
+Выраженно через воздействие вектора с силой обратно пропорциональной расстоянию до точки приложения
+:::
+
+::: {.column width="60%"}
 ```{python}
 np.random.seed(222)
 potato = cloud_generator.generate_cloud_matrix(10000, 40)
 view_data.plot_comparison(potato)
 ```
+:::
+:::::
+
+## Исследование эффективности от угла
+
+::: fragment
+#### Генерирация целового облака
+
+-   Поворот на заданное число вдоль плоскости XY
+-   Наложение шума
+:::
+
+::: fragment
+#### Метрики эффективности
+
+-   RMSE (среднеквадратическое расстояние от точек одного облака до другого облака)
+-   Нормы Фробениуса от разности между найденной трансформацией и искомой
+:::
 
 ## Исследование метода ICP
+
+### На всем дипазоне углов
 
 ```{python}
 def icp(source_pcd, target_pcd):
@@ -158,13 +228,212 @@ df = utils.estimate_metrics(Y, 40, icp, -180, 180)
 view_data.show_estimation_method_plot(df, title="ICP")
 ```
 
-##
+## Исследование метода ICP
+
+### Для углов от -45 до 45 градусов
 
 ```{python}
-view_data.plot_comparison(X)
+np.random.seed(111)
+NOISE_SCALE = 0.01
+
+X = cloud_generator.generate_cloud_matrix(10000, 40)
+Y = utils.add_noise(X, NOISE_SCALE)
+Y = utils.random_permutation(Y)
+
+df = utils.estimate_metrics(Y, 40, icp, -45, 45)
+view_data.show_estimation_method_plot(df, title="ICP")
 ```
 
 ## Ограниченность ICP
-Использование упрощенной метрики ведет к тому, что целевая функция преобретает значительное количество локальных минимумов. В связи с чем, использование алгоритма ограничено: ICP показывает хорошие результаты только при малых углах поворота
+
+Использование упрощенной метрики ведет к тому, что целевая функция преобретает значительное количество локальных минимумов. Кроме того, сопоставление точек облаков через ближайшие — довольно грубое приближение
+
+::: {.callout-warning title="Использование алгоритма ограничено"}
+ICP показывает хорошие результаты только при малых углах поворота
+:::
+
+## Альтернативное решение {.center}
+
+### проблемы поиска соответствия {.center}
+
+## Поиск соответствий через инвариантные свойства
+
+Соответствие можно установить на основе свойств, инвариантных к жёстким преобразованиям. Например:
+
+-   Углы между нормалями к точкам
+-   Расстояние до центра масс
+-   Радиус кривизны
+
+Упорядоченный набор таких свойств записывается как вектор, называемый **дескриптором**
+
+## Простейшее решение
+
+Каждой точке облака сопоставим точку другого облака, ближайшую по дескрипторам. С появлением соответствия на основе дескрипторов сразу приходит простая и понятная идея - применить желанный алгоритм Кабша. Однако в реальной ситуации можно столкнуться с рядом трудностей
+
+## Что делать, если дескрипторы совпадают?
+
+Простое решение - увеличить размер дескриптора! Больше инвариантных свойств — меньше вероятность совпадения ✅
+
+И это решение хоть и кажется забаным, однако некоторые дескрипторы могут насчитывать более 2000 элементов.
+
+Однако, это не всегда помогает. Из-за дубликатов может быть много неверных сопоставлений
+
+## Что делать, если дескрпитор далёк от всех дескрипторов другого облака?
+
+Такая ситуация вполне может возникнуть если представить, что шум достаточное возмущение для того, чтобы испортить локальные метрики. В конце концов, можно найти некоторый ближайший дескриптор, однако, не будет ли столь плохое соответствие портить решение?
+
+## Решение. RANSAC
+
+Что делать с возникающими несоответствиями? Исключать. Это довольно простой и изящный подход можно реализовать с помощью алгоритма RANSAC. В данном случае несоответствие можно вычислить через применение алгоритма Кабша - все пары точек, расстояние между которыми после оптимального поворота выше некоторого порога - исключаются как ложные соответствия. И цикл повторяется.
+
+## Исследование RANSAC
+
+### На всем дипазоне углов
+
+```{python}
+import numpy as np
+from predict_transformation import cloud_generator
+from predict_transformation import utils
+from predict_transformation.registrars import ICP_registrar, RANSAC_registrar
+from predict_transformation import view_data
+from predict_transformation.arg_parser import estimate_voxel_size
+
+def ransac(source_pcd, target_pcd, voxel_size=1):
+    registrar = RANSAC_registrar(source_pcd, target_pcd, voxel_size=voxel_size)
+    registrar.register()
+    return registrar.get_registration_result()
+
+np.random.seed(111)
+NOISE_SCALE = 0.01
+
+X = cloud_generator.generate_cloud_matrix(10000, 40)
+Y = utils.add_noise(X, NOISE_SCALE)
+Y = utils.random_permutation(Y)
 
 
+df = utils.estimate_metrics(Y, 40, ransac, -180, 180)
+view_data.show_estimation_method_plot(df, title="RANSAC")
+```
+
+## Исследование RANSAC
+
+### Для углов от -45 до 45 градусов
+
+```{python}
+import numpy as np
+from predict_transformation import cloud_generator
+from predict_transformation import utils
+from predict_transformation.registrars import ICP_registrar, RANSAC_registrar
+from predict_transformation import view_data
+from predict_transformation.arg_parser import estimate_voxel_size
+
+def ransac(source_pcd, target_pcd, voxel_size=1):
+    registrar = RANSAC_registrar(source_pcd, target_pcd, voxel_size=voxel_size)
+    registrar.register()
+    return registrar.get_registration_result()
+
+np.random.seed(111)
+NOISE_SCALE = 0.01
+
+X = cloud_generator.generate_cloud_matrix(10000, 40)
+Y = utils.add_noise(X, NOISE_SCALE)
+Y = utils.random_permutation(Y)
+
+df = utils.estimate_metrics(Y, 40, ransac, -45, 45)
+view_data.show_estimation_method_plot(df, title="RANSAC")
+```
+
+## 
+
+```{python}
+from predict_transformation import cloud_generator
+from predict_transformation.registrars import ICP_registrar, RANSAC_registrar
+from predict_transformation.registrars.RANSAC_registrar import preprocess_point_cloud
+from predict_transformation import utils
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(111)
+NOISE_SCALE = 0.01
+
+X = cloud_generator.generate_cloud_matrix(10000, 40)
+Y = utils.add_noise(X, NOISE_SCALE)
+Y = utils.random_permutation(Y)
+
+source_pcd = utils.matrix_to_cloud(X)
+target_pcd = utils.matrix_to_cloud(Y)
+
+source_down, source_fpfh = preprocess_point_cloud(source_pcd, 1)
+target_down, target_fpfh = preprocess_point_cloud(target_pcd, 1)
+
+
+registrar = RANSAC_registrar(source_down, target_down, voxel_size=1, source_descriptors=source_fpfh, target_descriopors=target_fpfh)
+registrar.register()
+result = registrar.get_registration_result()
+
+
+correspondences = np.asarray(result.correspondence_set)
+
+import plotly.graph_objects as go
+
+# Проверяем, что есть соответствия
+if len(correspondences) > 0:
+    source_points = np.asarray(source_down.points)
+    target_points = np.asarray(target_down.points)
+    
+    first_correspondence = correspondences[0]
+    source_idx, target_idx = first_correspondence
+
+    # Получаем координаты точек первого соответствия
+    source_point = source_points[source_idx]
+    target_point = target_points[target_idx]
+
+    # Создаем график
+    fig = go.Figure()
+
+    # Добавляем облака точек
+    fig.add_trace(go.Scatter3d(
+        x=source_points[:, 0],
+        y=source_points[:, 1],
+        z=source_points[:, 2],
+        mode='markers',
+        marker=dict(size=5, color='blue', opacity=0.6),
+        name='Source Points'
+    ))
+
+    fig.add_trace(go.Scatter3d(
+        x=target_points[:, 0],
+        y=target_points[:, 1],
+        z=target_points[:, 2],
+        mode='markers',
+        marker=dict(size=5, color='green', opacity=0.6),
+        name='Target Points'
+    ))
+
+    # Добавляем линию между соответствующими точками
+    fig.add_trace(go.Scatter3d(
+        x=[source_point[0], target_point[0]],
+        y=[source_point[1], target_point[1]],
+        z=[source_point[2], target_point[2]],
+        mode='lines+markers',
+        line=dict(color='red', width=4),
+        marker=dict(size=8, color=['blue', 'green']),
+        name='First Correspondence'
+    ))
+
+    # Настройка графика
+    fig.update_layout(
+        title="Первое соответствие между облаками точек",
+        scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Z'
+        )
+    )
+
+    fig.show()
+else:
+    print("Соответствия не найдены.")
+
+
+```

@@ -50,7 +50,7 @@ class RANSAC_registrar:
                 target_pcd, voxel_size
             )
         else:
-            self.target_down = source_pcd
+            self.target_down = target_pcd
             self.target_fpfh = target_descriopors
 
         self.voxel_size = voxel_size
