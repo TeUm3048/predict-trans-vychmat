@@ -59,7 +59,6 @@ dependencies = [
     "nbformat==5.10.4",
     "nest-asyncio==1.6.0",
     "numpy==1.26.4",
-    "open3d==0.18.0",
     "packaging==24.1",
     "pandas==2.2.3",
     "parso==0.8.4",
@@ -96,6 +95,10 @@ dependencies = [
     "widgetsnbextension==4.0.13",
     "zipp==3.21.0",
 ]
+
+[project.optional-dependencies]
+open3d = ["open3d==0.18.0"]
+
 [project.urls]
 Homepage = "https://github.com/pypa/sampleproject"
 Issues = "https://github.com/pypa/sampleproject/issues"
